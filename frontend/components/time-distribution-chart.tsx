@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts"
 
 interface TimeDistributionData {
   range: string
@@ -48,8 +48,7 @@ export function TimeDistributionChart({ data, title, description, isLoading, uni
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 dataKey="range"
@@ -67,8 +66,7 @@ export function TimeDistributionChart({ data, title, description, isLoading, uni
                 }
               />
               <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} fillOpacity={0.8} />
-            </BarChart>
-          </ResponsiveContainer>
+          </BarChart>
         </ChartContainer>
 
         {/* Statistics Summary */}
