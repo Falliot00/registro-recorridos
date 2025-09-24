@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { CalendarIcon, Filter, X, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -60,7 +60,7 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between h-auto min-h-10 px-3 py-2 bg-transparent"
-          disabled={isLoading}
+          /*disabled={isLoading}*/
         >
           <div className="flex flex-wrap gap-1">
             {selected.length === 0 ? (
@@ -71,16 +71,25 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
                 return (
                   <Badge key={value} variant="secondary" className="text-xs">
                     {option?.label ?? value}
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Quitar ${option?.label ?? value}`}
                       onClick={(event) => {
                         event.stopPropagation()
                         removeOption(value)
                       }}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full"
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          removeOption(value)
+                        }
+                      }}
+                      className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-secondary-foreground/20 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                     >
                       <X className="h-3 w-3" />
-                    </button>
+                    </span>
                   </Badge>
                 )
               })
@@ -133,6 +142,13 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
 
 export function GlobalFilters() {
   const { filters, updateFilters, resetFilters, resultCount, queryTime } = useFilters()
+
+  useEffect(() => {
+    setDateRange({
+      from: new Date(filters.from),
+      to: new Date(filters.to),
+    })
+  }, [filters.from, filters.to])
 
   const { data: filterOptions, isLoading: loadingOptions } = useQuery({
     queryKey: ["filter-options"],
@@ -306,3 +322,5 @@ export function GlobalFilters() {
     </Card>
   )
 }
+
+

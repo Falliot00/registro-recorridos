@@ -164,7 +164,7 @@ export async function getConnectionPool(): Promise<sql.ConnectionPool> {
     const config = resolveConfig()
     globalCache.__MSSQL_POOL_PROMISE__ = new sql.ConnectionPool(config)
       .connect()
-      .then((pool) => {
+      .then((pool: any) => {
         globalCache.__MSSQL_POOL__ = pool
         pool.on("close", () => {
           globalCache.__MSSQL_POOL__ = undefined
@@ -172,7 +172,7 @@ export async function getConnectionPool(): Promise<sql.ConnectionPool> {
         })
         return pool
       })
-      .catch((error) => {
+      .catch((error: any) => {
         globalCache.__MSSQL_POOL_PROMISE__ = undefined
         throw error
       })
@@ -185,12 +185,14 @@ export async function createRequest(parameters: SqlParameter[] = []) {
   const pool = await getConnectionPool()
   const request = pool.request()
   parameters.forEach((param) => {
-    if (param.type) {
-      request.input(param.name, param.type, param.value)
+    if (param.type !== undefined && param.type !== null) {
+      // Si el tipo es una función, invocarla para obtener el tipo real
+      const sqlType = typeof param.type === 'function' ? param.type() : param.type;
+      request.input(param.name, sqlType, param.value);
     } else {
-      request.input(param.name, param.value)
+      request.input(param.name, param.value);
     }
-  })
+  });
   return request
 }
 

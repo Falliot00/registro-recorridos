@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
 import type { Filtros } from "./types"
+import { useQueryParams } from "@/hooks/use-query-params"
 
 interface FilterContextType {
   filters: Filtros
@@ -28,22 +29,47 @@ const defaultFilters: Filtros = {
 }
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
-  const [filters, setFilters] = useState<Filtros>(defaultFilters)
+  const { updateURL, parseFiltersFromURL } = useQueryParams()
+  const [filters, setFilters] = useState<Filtros>(() => ({ ...defaultFilters }))
+  const hydrationCompleteRef = useRef(false)
+  const shouldSyncRef = useRef(false)
   const [isLoading, setIsLoading] = useState(false)
   const [resultCount, setResultCount] = useState(0)
   const [queryTime, setQueryTime] = useState(0)
+
+  useEffect(() => {
+    if (hydrationCompleteRef.current) return
+    const parsed = parseFiltersFromURL()
+    if (Object.keys(parsed).length) {
+      setFilters((prev) => ({
+        ...prev,
+        ...parsed,
+        page: parsed.page ?? 1,
+        pageSize: parsed.pageSize ?? prev.pageSize,
+      }))
+    }
+    hydrationCompleteRef.current = true
+  }, [parseFiltersFromURL])
+
+  useEffect(() => {
+    if (!hydrationCompleteRef.current) return
+    if (!shouldSyncRef.current) {
+      shouldSyncRef.current = true
+      return
+    }
+    updateURL(filters)
+  }, [filters, updateURL])
 
   const updateFilters = useCallback((newFilters: Partial<Filtros>) => {
     setFilters((prev) => ({
       ...prev,
       ...newFilters,
-      // Reset page when filters change (except when explicitly setting page)
       page: newFilters.page !== undefined ? newFilters.page : 1,
     }))
   }, [])
 
   const resetFilters = useCallback(() => {
-    setFilters(defaultFilters)
+    setFilters(() => ({ ...defaultFilters }))
     setResultCount(0)
     setQueryTime(0)
   }, [])

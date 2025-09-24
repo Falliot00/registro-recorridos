@@ -129,7 +129,7 @@ export class DatabaseMapper {
       cleaned.forEach((value, index) => {
         const paramName = `${prefix}${index}`
         placeholders.push(`@${paramName}`)
-        addParam(paramName, sql.NVarChar, value)
+        addParam(paramName, undefined, value)
       })
 
       conditions.push(`${column} IN (${placeholders.join(",")})`)
@@ -246,7 +246,7 @@ export class DatabaseMapper {
 
     const result = await request.query(query)
 
-    return result.recordset.map((row) => ({
+    return result.recordset.map((row: any) => ({
       fecha: row.Fecha,
       minutosViaje: Math.round(Number(row.MinutosViaje) || 0),
       minutosEspera: Math.round(Number(row.MinutosEspera) || 0),
@@ -270,7 +270,7 @@ export class DatabaseMapper {
 
     const result = await request.query(query)
 
-    return result.recordset.map((row) => ({
+    return result.recordset.map((row: any) => ({
       interno: sanitizeString(row.Interno) ?? "Sin asignar",
       viajes: Number(row.Viajes) || 0,
     }))
@@ -410,15 +410,19 @@ export class DatabaseMapper {
       SELECT DISTINCT Lugar FROM ${TABLE_NAME} WHERE Lugar IS NOT NULL AND Lugar <> '' ORDER BY Lugar;
     `)
 
-    const [internos, servicios, conductores, tipos, lugares] = result.recordsets
+    let internos: any[] = [], servicios: any[] = [], conductores: any[] = [], tipos: any[] = [], lugares: any[] = [];
+    if (Array.isArray(result.recordsets)) {
+      [internos, servicios, conductores, tipos, lugares] = result.recordsets;
+    }
 
     return {
-      internos: internos?.map((row) => sanitizeString(row.Interno)).filter((value): value is string => Boolean(value)) ?? [],
-      servicios: servicios?.map((row) => sanitizeString(row.Servicio)).filter((value): value is string => Boolean(value)) ?? [],
+      internos: internos?.map((row: any) => sanitizeString(row.Interno)).filter((value: any): value is string => Boolean(value)) ?? [],
+      servicios: servicios?.map((row: any) => sanitizeString(row.Servicio)).filter((value: any): value is string => Boolean(value)) ?? [],
       conductores:
-        conductores?.map((row) => sanitizeString(row.Conductor)).filter((value): value is string => Boolean(value)) ?? [],
-      tipos: tipos?.map((row) => sanitizeString(row.Tipo)).filter((value): value is string => Boolean(value)) ?? [],
-      lugares: lugares?.map((row) => sanitizeString(row.Lugar)).filter((value): value is string => Boolean(value)) ?? [],
+        conductores?.map((row: any) => sanitizeString(row.Conductor)).filter((value: any): value is string => Boolean(value)) ?? [],
+      tipos: tipos?.map((row: any) => sanitizeString(row.Tipo)).filter((value: any): value is string => Boolean(value)) ?? [],
+      lugares: lugares?.map((row: any) => sanitizeString(row.Lugar)).filter((value: any): value is string => Boolean(value)) ?? [],
     }
   }
 }
+
