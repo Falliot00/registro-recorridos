@@ -279,17 +279,22 @@ export class DatabaseMapper {
   static async getRegistros(filters: Filtros): Promise<RegistrosResponse> {
     const pageSize = filters.pageSize ?? 50
     const page = filters.page ?? 1
-    const offset = (page - 1) * pageSize
+    const shouldPaginate = pageSize > 0
+    const offset = shouldPaginate ? (page - 1) * pageSize : 0
 
     const { clause, params } = this.buildWhereClause(filters)
     const sortColumn = this.getSortColumn(filters.sortBy)
     const sortDirection = this.getSortDirection(filters.sortDir)
 
-    const request = await createRequest([
-      ...params,
-      { name: "offset", value: offset },
-      { name: "pageSize", value: pageSize },
-    ])
+    const requestParams: SqlParameter[] = [...params]
+
+    if (shouldPaginate) {
+      requestParams.push({ name: "offset", value: offset })
+      requestParams.push({ name: "pageSize", value: pageSize })
+    }
+
+    const request = await createRequest(requestParams)
+    const paginationClause = shouldPaginate ? "\r\n      OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY" : ""
 
     const dataQuery = `
       SELECT
@@ -303,21 +308,24 @@ export class DatabaseMapper {
         Servicio
       FROM ${TABLE_NAME}
       ${clause}
-      ORDER BY ${sortColumn} ${sortDirection}, Id ${sortDirection}
-      OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
+      ORDER BY ${sortColumn} ${sortDirection}, Id ${sortDirection}${paginationClause}
     `
 
     const dataResult = await request.query(dataQuery)
     const rows = dataResult.recordset.map(toRegistro)
 
-    const countRequest = await createRequest(params)
-    const countResult = await countRequest.query(`
-      SELECT COUNT(1) AS total
-      FROM ${TABLE_NAME}
-      ${clause}
-    `)
+    let total = rows.length
 
-    const total = Number(countResult.recordset[0]?.total) || 0
+    if (shouldPaginate) {
+      const countRequest = await createRequest(params)
+      const countResult = await countRequest.query(`
+        SELECT COUNT(1) AS total
+        FROM ${TABLE_NAME}
+        ${clause}
+      `)
+
+      total = Number(countResult.recordset[0]?.total) || 0
+    }
 
     return { rows, total }
   }
@@ -425,4 +433,5 @@ export class DatabaseMapper {
     }
   }
 }
+
 

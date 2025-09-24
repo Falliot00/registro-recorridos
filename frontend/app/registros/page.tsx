@@ -111,7 +111,7 @@ function buildQueryParams(filters: Filtros): string {
 }
 
 async function fetchRegistros(filters: Filtros): Promise<RegistrosResponse> {
-  const queryString = buildQueryParams(filters)
+  const queryString = buildQueryParams({ ...filters, page: 1, pageSize: 0 })
   const response = await fetch(`/api/registros?${queryString}`)
   if (!response.ok) throw new Error("Failed to fetch registros")
   return response.json()
@@ -216,3 +216,4 @@ export default function RegistrosPage() {
     </div>
   )
 }
+
