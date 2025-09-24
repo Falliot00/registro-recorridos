@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { DatabaseMapper } from "@/lib/db-mapper"
 import { FiltrosSchema, TiempoViajeSchema } from "@/lib/types"
 
+export const dynamic = "force-dynamic"
+
 function parseMultiValue(params: URLSearchParams, keys: string[]): string[] | undefined {
   for (const key of keys) {
     const value = params.get(key)
